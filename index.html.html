@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Misión Casa Común | Laudato si'</title>
+<style>
+:root{--forest:#174b38;--leaf:#4e8b57;--mint:#e8f3e8;--cream:#fffaf0;--gold:#e7b94f;--ink:#20352b}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,sans-serif;background:linear-gradient(135deg,#dcebd8,#f8f2df);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:22px}
+.game{width:min(850px,100%);background:var(--cream);border:1px solid #d8e4d3;border-radius:25px;overflow:hidden;box-shadow:0 18px 55px #173b2822}
+header{background:var(--forest);color:white;padding:26px 30px;text-align:center}
+header .tag{letter-spacing:2px;text-transform:uppercase;font-size:.75rem;color:#cce5ce}
+h1{margin:8px 0;font-size:clamp(1.8rem,5vw,2.7rem)}header p{margin:0;color:#e2eee1}
+main{padding:clamp(20px,5vw,38px)}
+.stats{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-weight:700;color:var(--forest);margin-bottom:18px}
+.track{height:9px;background:#e1e9dc;border-radius:99px;overflow:hidden;margin-bottom:26px}.bar{height:100%;width:0;background:var(--leaf);transition:width .3s}
+h2{font-size:1.35rem;line-height:1.35;margin:0 0 20px}
+.answers{display:grid;gap:12px}
+button{font:inherit;cursor:pointer}
+.answer{border:2px solid #d9e5d6;background:white;border-radius:14px;padding:15px 17px;text-align:left;color:var(--ink);transition:.15s}
+.answer:hover:not(:disabled){border-color:var(--leaf);background:#f1f8ef;transform:translateY(-1px)}
+.answer:disabled{cursor:default;opacity:1}
+.answer.correct{border-color:#38834b;background:#e6f5e8}.answer.wrong{border-color:#c77a42;background:#fff0e5}
+.feedback{margin-top:18px;padding:15px 17px;border-radius:14px;line-height:1.5;display:none}
+.feedback.show{display:block}.feedback.good{background:#e6f5e8;border:1px solid #acd5b4}.feedback.bad{background:#fff0e5;border:1px solid #edc6a7}
+.primary{background:var(--forest);color:white;border:0;border-radius:999px;padding:13px 24px;font-weight:700;margin-top:20px}
+.primary:hover{background:#286348}.center{text-align:center}.intro{line-height:1.65}.hidden{display:none}
+.result{font-size:3rem;font-weight:800;color:var(--forest);margin:8px}
+footer{text-align:center;color:#617567;font-size:.82rem;padding:0 20px 22px}
+</style>
+</head>
+<body>
+<div class="game">
+<header><div class="tag">Desafío ecológico · Laudato si'</div><h1>🌎 Misión Casa Común</h1><p>Aprende, decide y transforma.</p></header>
+<main>
+<section id="start" class="center">
+<h2>¿Aceptas el desafío?</h2>
+<p class="intro">La casa común necesita personas que comprendan el mensaje de <em>Laudato si’</em>. Responde 12 preguntas sobre la encíclica y demuestra que puedes convertir sus enseñanzas en acciones cotidianas.</p>
+<p><strong>Reglas:</strong> elige una respuesta por pregunta. Después recibirás una explicación para aprender de cada respuesta.</p>
+<button class="primary" onclick="begin()">Comenzar misión</button>
+</section>
+<section id="quiz" class="hidden">
+<div class="stats"><span id="counter">Pregunta 1 de 12</span><span id="score">Puntos: 0</span></div>
+<div class="track"><div class="bar" id="bar"></div></div>
+<h2 id="question"></h2>
+<div class="answers" id="answers"></div>
+<div class="feedback" id="feedback" aria-live="polite"></div>
+<button class="primary hidden" id="next" onclick="advance()">Siguiente pregunta →</button>
+</section>
+<section id="end" class="center hidden">
+<h2>¡Misión completada!</h2>
+<div class="result" id="finalscore">0/12</div>
+<p id="message" class="intro"></p>
+<h3>Recuerda</h3>
+<p class="intro">Cuidar nuestra casa común no termina al finalizar el juego. Comienza con nuestras decisiones de cada día.</p>
+<button class="primary" onclick="restart()">Jugar otra vez</button>
+</section>
+</main>
+<footer>Inspirado en la encíclica Laudato si’ · Papa Francisco (2015)</footer>
+</div>
+<script>
+const questions=[
+{q:"¿Quién escribió la encíclica Laudato si’?",a:["San Juan Pablo II","El papa Francisco","Benedicto XVI","San Juan XXIII"],c:1,e:"Laudato si’ fue publicada por el papa Francisco el 24 de mayo de 2015."},
+{q:"¿Qué significa el título Laudato si’?",a:["La tierra es nuestra","Alabado seas, mi Señor","Salvemos el planeta","La vida es sagrada"],c:1,e:"La expresión procede del Cántico de las criaturas de San Francisco de Asís."},
+{q:"¿Cuál es el tema central de la encíclica?",a:["El cuidado de la casa común","La economía mundial solamente","La historia de la Iglesia","El avance de la tecnología"],c:0,e:"La encíclica invita a cuidar la creación y a responder a la crisis socioambiental."},
+{q:"¿Cuántos capítulos tiene la encíclica?",a:["Cuatro","Cinco","Seis","Ocho"],c:2,e:"Laudato si’ contiene seis capítulos, además de su introducción y oraciones finales."},
+{q:"¿Qué quiere decir que todo está conectado?",a:["Que solo importa la naturaleza","Que los problemas ambientales y sociales se relacionan","Que la tecnología resolverá todo","Que las personas no influyen en el ambiente"],c:1,e:"La ecología integral reconoce la relación entre ambiente, sociedad, economía y vida humana."},
+{q:"Según la encíclica, ¿cómo debemos entender nuestro papel ante la creación?",a:["Como dueños sin límites","Como administradores responsables","Como espectadores indiferentes","Como consumidores de recursos"],c:1,e:"El ser humano está llamado a cuidar responsablemente la creación, no a dominarla irresponsablemente."},
+{q:"¿Qué es la cultura del descarte?",a:["Reutilizar los objetos","Valorar los recursos","Desechar cosas y excluir personas como si no tuvieran valor","Separar los residuos"],c:2,e:"El papa Francisco critica una cultura que desecha objetos y también margina a personas vulnerables."},
+{q:"¿Qué propone la ecología integral?",a:["Atender únicamente a los animales","Separar los problemas sociales de los ambientales","Considerar conjuntamente la naturaleza y las dimensiones humanas y sociales","Evitar todo desarrollo"],c:2,e:"La ecología integral comprende que la crisis ambiental y la crisis social están relacionadas."},
+{q:"¿Cuál es una acción coherente con Laudato si’?",a:["Dejar correr el agua","Usar plásticos desechables sin necesidad","Separar residuos y reducir el consumo","Botar basura en espacios naturales"],c:2,e:"Reducir residuos y consumir responsablemente son gestos concretos de cuidado de la casa común."},
+{q:"¿Por qué la crisis ecológica afecta especialmente a los pobres?",a:["Porque no forman parte de la sociedad","Porque suelen tener menos recursos para enfrentar sus consecuencias","Porque no utilizan tecnología","Porque viven lejos de las ciudades"],c:1,e:"Las comunidades vulnerables suelen sufrir con mayor intensidad los efectos de la degradación ambiental."},
+{q:"¿Qué propone el capítulo VI?",a:["Educación y espiritualidad ecológica","La historia de los continentes","La competencia económica","El uso ilimitado de recursos"],c:0,e:"El sexto capítulo invita a una educación ecológica, a cambiar hábitos y a desarrollar una espiritualidad del cuidado."},
+{q:"¿Cuál sería un compromiso juvenil inspirado en Laudato si’?",a:["Esperar que otros actúen","Ignorar los problemas ambientales","Organizar acciones de cuidado y sensibilización en el colegio","Pensar que las pequeñas acciones no sirven"],c:2,e:"La transformación comienza con acciones personales y comunitarias que promueven el bien común."}
+];
+let index=0,score=0,locked=false;
+function begin(){document.getElementById('start').classList.add('hidden');document.getElementById('quiz').classList.remove('hidden');render()}
+function render(){
+ locked=false;let q=questions[index];
+ document.getElementById('counter').textContent=`Pregunta ${index+1} de ${questions.length}`;
+ document.getElementById('score').textContent=`Puntos: ${score}`;
+ document.getElementById('bar').style.width=`${index/questions.length*100}%`;
+ document.getElementById('question').textContent=q.q;
+ document.getElementById('answers').innerHTML='';
+ document.getElementById('feedback').className='feedback';
+ document.getElementById('feedback').textContent='';
+ document.getElementById('next').classList.add('hidden');
+ q.a.forEach((answer,i)=>{let b=document.createElement('button');b.className='answer';b.textContent=String.fromCharCode(65+i)+'. '+answer;b.onclick=()=>choose(i);document.getElementById('answers').appendChild(b)});
+}
+function choose(choice){
+ if(locked)return;locked=true;let q=questions[index];let buttons=[...document.querySelectorAll('.answer')];
+ buttons.forEach((b,i)=>{b.disabled=true;if(i===q.c)b.classList.add('correct');if(i===choice&&choice!==q.c)b.classList.add('wrong')});
+ let good=choice===q.c;if(good)score++;
+ let f=document.getElementById('feedback');f.className='feedback show '+(good?'good':'bad');
+ f.innerHTML=`<strong>${good?'¡Correcto! +1 punto':'No exactamente.'}</strong><br>${q.e}`;
+ document.getElementById('score').textContent=`Puntos: ${score}`;
+ let n=document.getElementById('next');n.textContent=index===questions.length-1?'Ver resultado':'Siguiente pregunta →';n.classList.remove('hidden');
+}
+function advance(){if(index<questions.length-1){index++;render()}else finish()}
+function finish(){document.getElementById('quiz').classList.add('hidden');document.getElementById('end').classList.remove('hidden');document.getElementById('bar').style.width='100%';document.getElementById('finalscore').textContent=`${score}/${questions.length}`;let m=score>=10?'¡Excelente! Comprendes muy bien el mensaje de Laudato si’.':score>=7?'¡Buen trabajo! Sigue profundizando en el cuidado de la casa común.':'¡Sigue aprendiendo! Repasa las explicaciones y vuelve a intentarlo.';document.getElementById('message').textContent=m}
+function restart(){index=0;score=0;document.getElementById('end').classList.add('hidden');document.getElementById('quiz').classList.remove('hidden');render()}
+</script>
+</body>
+</html>
